@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Velvet Vogue</title>
+
+ 
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style2412.css">
+  
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="site-header new-header">
+  <div class="logo">
+    VELVET <span>VOGUE</span>
+  </div>
+
+  <nav class="main-nav">
+    <a href="#" data-target="home">Home</a>
+    <a href="#" data-target="shop">Shop</a>
+    <a href="#" data-target="admin">Add Products</a>
+  </nav>
+
+  <div class="header-actions">
+    <button id="cart-btn">🛒 <span id="cart-count">0</span></button>
+    <button id="login-btn">Login</button>
+  </div>
+</header>
+
+<main>
+
+<!-- HOME -->
+<section id="home" class="page active">
+  <div class="hero">
+    <h1>Luxury Fashion Redefined</h1>
+    <p>Modern • Minimal • Premium</p>
+    <button class="cta" data-target="shop">Shop Now</button>
+  </div>
+</section>
+
+<!-- SHOP -->
+<section id="shop" class="page">
+  <div class="shop-header">
+    <h2>Shop</h2>
+    <div class="filters">
+      <select id="filter-category">
+        <option value="">All</option>
+        <option value="Women">Women</option>
+        <option value="Men">Men</option>
+        <option value="Accessories">Accessories</option>
+      </select>
+      <input id="search-input" placeholder="Search products">
+    </div>
+  </div>
+
+  <div id="products-grid" class="products-grid"></div>
+</section>
+
+<!-- ADMIN -->
+<section id="admin" class="page">
+  <h2>Add New Items</h2>
+  <form id="admin-form" class="admin-form">
+    <input id="prod-title" placeholder="Title" required>
+    <select id="prod-category">
+      <option>Women</option>
+      <option>Men</option>
+      <option>Accessories</option>
+    </select>
+    <input id="prod-price" type="number" placeholder="Price" required>
+    <input id="prod-image" placeholder="Image URL">
+    <textarea id="prod-desc" placeholder="Description"></textarea>
+    <button type="submit">Add Item</button>
+  </form>
+  <div id="admin-message"></div>
+</section>
+
+</main>
+
+<!-- CART -->
+<aside id="cart-panel">
+  <h3>Your Cart</h3>
+  <div id="cart-items"></div>
+  <p>Total: <strong id="cart-subtotal">Rs.0.00</strong></p>
+  <button id="checkout-btn">Checkout</button>
+</aside>
+
+<!-- LOGIN -->
+<div id="login-modal" class="modal hidden">
+  <div class="modal-content">
+    <button id="close-login">×</button>
+    <h3>Login</h3>
+    <form id="login-form">
+      <input type="email" placeholder="Email" required>
+      <input type="password" placeholder="Password" required>
+      <button>Login</button>
+    </form>
+  </div>
+</div>
+
+<footer class="site-footer">
+  © 2026 Velvet Vogue
+</footer>
+
+<!-- JAVASCRIPT -->
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+
+const USD_TO_LKR = 300;
+const CURRENCY = "Rs.";
+
+const products = [
+  {id:1,title:"Satin Dress",category:"Women",price:9,img:"https://img105.savana.com/goods-pic/20712638351347089fb69ddd7430b7a9_w540_h720_q85.webp"},
+  {id:2,title:"Men Jacket",category:"Men",price:12,img:"https://www.thejacketmaker.is/cdn/shop/files/Men-Leather-Jackets-1582970628214_d6c2af3e-cd7e-44b8-88cb-94527f33218d_2048x.webp"},
+  {id:3,title:"Tote Bag",category:"Accessories",price:8,img:"https://static-01.daraz.lk/p/524df3ea963dea1b0c7810855d388f25.jpg"}
+];
+
+let cart = JSON.parse(localStorage.getItem("vv_cart")) || [];
+
+// ELEMENTS
+const pages = document.querySelectorAll(".page");
+const navLinks = document.querySelectorAll(".main-nav a");
+const ctaBtns = document.querySelectorAll(".cta");
+const productsGrid = document.getElementById("products-grid");
+const cartPanel = document.getElementById("cart-panel");
+const cartBtn = document.getElementById("cart-btn");
+const cartItems = document.getElementById("cart-items");
+const cartCount = document.getElementById("cart-count");
+const cartSubtotal = document.getElementById("cart-subtotal");
+const checkoutBtn = document.getElementById("checkout-btn");
+const filterCategory = document.getElementById("filter-category");
+const searchInput = document.getElementById("search-input");
+const loginBtn = document.getElementById("login-btn");
+const loginModal = document.getElementById("login-modal");
+const closeLogin = document.getElementById("close-login");
+const loginForm = document.getElementById("login-form");
+const adminForm = document.getElementById("admin-form");
+const adminMsg = document.getElementById("admin-message");
+
+// NAVIGATION
+function showPage(id){
+  pages.forEach(p=>p.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  cartPanel.classList.remove("open");
+  loginModal.classList.add("hidden");
+}
+
+navLinks.forEach(a=>{
+  a.onclick = e => {
+    e.preventDefault();
+    showPage(a.dataset.target);
+  };
+});
+ctaBtns.forEach(b=>b.onclick=()=>showPage(b.dataset.target));
+
+// PRODUCTS
+function renderProducts(){
+  productsGrid.innerHTML="";
+  const cat = filterCategory.value;
+  const q = searchInput.value.toLowerCase();
+
+  products.filter(p=>(!cat||p.category===cat)&&p.title.toLowerCase().includes(q))
+  .forEach(p=>{
+    productsGrid.innerHTML += `
+      <div class="card">
+        <img src="${p.img}">
+        <h4>${p.title}</h4>
+        <p>${CURRENCY}${(p.price*USD_TO_LKR).toFixed(2)}</p>
+        <button onclick="addToCart(${p.id})">Add to Cart</button>
+      </div>`;
+  });
+}
+
+// CART
+window.addToCart = id => {
+  const item = cart.find(i=>i.id===id);
+  item ? item.qty++ : cart.push({id,qty:1});
+  saveCart(); renderCart();
+  cartPanel.classList.add("open");
+};
+
+function renderCart(){
+  cartItems.innerHTML="";
+  let total=0,count=0;
+  cart.forEach(i=>{
+    const p=products.find(x=>x.id===i.id);
+    total+=p.price*i.qty;
+    count+=i.qty;
+    cartItems.innerHTML+=`<p>${p.title} (${i.qty})</p>`;
+  });
+  cartSubtotal.textContent=`${CURRENCY}${(total*USD_TO_LKR).toFixed(2)}`;
+  cartCount.textContent=count;
+}
+
+function saveCart(){localStorage.setItem("vv_cart",JSON.stringify(cart));}
+
+cartBtn.onclick=()=>cartPanel.classList.toggle("open");
+checkoutBtn.onclick=()=>{
+  if(!cart.length){alert("Cart empty");return;}
+  alert("Checkout successful");
+  cart=[];saveCart();renderCart();cartPanel.classList.remove("open");
+};
+
+// LOGIN
+loginBtn.onclick=()=>loginModal.classList.remove("hidden");
+closeLogin.onclick=()=>loginModal.classList.add("hidden");
+loginForm.onsubmit=e=>{e.preventDefault();alert("Login successful");loginModal.classList.add("hidden");};
+
+// ADMIN
+adminForm.onsubmit=e=>{
+  e.preventDefault();
+  products.push({
+    id:products.length+1,
+    title:prod-title.value,
+    category:prod-category.value,
+    price:parseFloat(prod-price.value),
+    img:prod-image.value||"https://images.unsplash.com/photo-1520975912866-8a4f58c9a7b7"
+  });
+  adminMsg.textContent="Product added successfully";
+  adminForm.reset();
+  renderProducts();
+};
+
+// INIT
+renderProducts();
+renderCart();
+
+});
+</script>
+
+</body>
+</html>
